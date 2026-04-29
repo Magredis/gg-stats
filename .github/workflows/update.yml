@@ -1,0 +1,48 @@
+name: Update Duels Report
+
+on:
+  workflow_dispatch:          # кнопка Run workflow в Actions tab
+  schedule:
+    - cron: '0 5 * * *'       # каждый день в 5:00 UTC
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore duels cache
+        uses: actions/cache@v4
+        with:
+          path: duels_cache.json
+          key: duels-cache-${{ github.run_id }}
+          restore-keys: duels-cache-
+
+      - name: Fetch & generate report
+        env:
+          GEOGUESSR_NCFA: ${{ secrets.GEOGUESSR_NCFA }}
+        run: python fetch.py
+
+      - name: Commit report
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html duels_cache.json
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "update $(date -u +'%Y-%m-%d %H:%M UTC')" && git push
