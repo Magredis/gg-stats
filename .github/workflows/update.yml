@@ -1,9 +1,9 @@
 name: Update Duels Report
 
 on:
-  workflow_dispatch:          # кнопка Run workflow в Actions tab
+  workflow_dispatch:
   schedule:
-    - cron: '0 5 * * *'       # каждый день в 5:00 UTC
+    - cron: '0 5 * * *'
 
 jobs:
   update:
